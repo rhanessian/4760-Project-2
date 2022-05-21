@@ -4,12 +4,26 @@
 #include <sys/shm.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
-#include <sys/wait.h>  /* Needed for the wait function */
-#include <unistd.h>    /* needed for the fork function */
-#include <string.h>    /* needed for the strcat function */
+#include <sys/wait.h>  
+#include <unistd.h>    
+#include <string.h> 
+#include <signal.h>
 #define SHMSIZE 27
 
+pid_t childpid;
+int shmid;
+char *shm;
+
+void sighandler(int signum) {
+	printf("Caught signal %d, coming out...\n", signum);
+	kill(childpid, SIGCHLD);
+	shmdt(shm);
+	shmctl(shmid, IPC_RMID, NULL);
+	exit(1);
+}
+
 int main (int argc, char *argv[]) {
+	signal(SIGINT, sighandler);
 
 	int c, n;
 	
@@ -35,18 +49,16 @@ int main (int argc, char *argv[]) {
 	
 	printf("ss = %d, n = %d\n", ss, n);
 	
-	int shmid;
-	char *shm;
+	pid_t pid;
 
-	if(fork() == 0) {
-		char *args[] = {"./child", "-aF", "/", 0};	/* each element represents a command line argument */
-		char *env[] = { 0 };	/* leave the environment list null */
+	if((pid = fork()) == 0) {
+		char *args[] = {"./child", "-aF", "/", 0};
+		char *env[] = { 0 };
 		execve("./child", args, env);
-		perror("execve");	/* if we get here, execve failed */
+		perror("execve");
 		exit(1);
 	} else {
-		/* Variable s removed, it wasn't used */
-		/* Removed first call to wait as it held up parent process */
+		childpid = pid;
 		shmid = shmget(2009, SHMSIZE, 0666 | IPC_CREAT);
 		shm = shmat(shmid, 0, 0);
 		wait(NULL);
@@ -57,3 +69,13 @@ int main (int argc, char *argv[]) {
 	
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
