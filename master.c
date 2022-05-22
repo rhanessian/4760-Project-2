@@ -32,6 +32,12 @@ void delete_pid(pid_t pid) {
 			pids[i] = 0;
 }
 
+void handle_child(int signum) {
+	pid_t pid = wait(NULL);
+	printf("Caught signal from pid %ld\n", (long)pid);
+	delete_pid(pid);
+}
+
 int find_space(void) {
 	for (int i = 0; i < MAXPIDS; i++) 
 		if (pids[i] == 0)
@@ -41,7 +47,7 @@ int find_space(void) {
 
 int main (int argc, char *argv[]) {
 	signal(SIGINT, sighandler);
-
+	signal(SIGCHLD, handle_child);
 	int c, n;
 	
 	int ss = 100;
@@ -70,7 +76,7 @@ int main (int argc, char *argv[]) {
 	
 	pid_t pid;
 	
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < n; i++) {
 		int ind;
 		while ((ind = find_space()) < 0)
 			usleep(500);
