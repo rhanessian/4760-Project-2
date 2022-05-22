@@ -9,17 +9,34 @@
 #include <string.h> 
 #include <signal.h>
 #define SHMSIZE 27
+#define MAXPIDS 20
 
-pid_t childpid;
+pid_t pids[MAXPIDS];
+
 int shmid;
 char *shm;
 
 void sighandler(int signum) {
 	printf("Caught signal %d, coming out...\n", signum);
-	kill(childpid, SIGCHLD);
+	for (int i = 0; i < MAXPIDS; i++)
+		if (pids[i] != 0)	
+			kill(pids[i], SIGCHLD);
 	shmdt(shm);
 	shmctl(shmid, IPC_RMID, NULL);
 	exit(1);
+}
+
+void delete_pid(pid_t pid) {
+	for (int i = 0; i < MAXPIDS; i++) 
+		if (pid == pids[i])
+			pids[i] = 0;
+}
+
+int find_space(void) {
+	for (int i = 0; i < MAXPIDS; i++) 
+		if (pids[i] == 0)
+			return i;
+	return -1;
 }
 
 int main (int argc, char *argv[]) {
@@ -48,24 +65,34 @@ int main (int argc, char *argv[]) {
 	}
 	
 	printf("ss = %d, n = %d\n", ss, n);
+	shmid = shmget(2009, SHMSIZE, 0666 | IPC_CREAT);
+	shm = shmat(shmid, 0, 0);
 	
 	pid_t pid;
+	
+	for (int i = 0; i < 3; i++) {
+		int ind;
+		while ((ind = find_space()) < 0)
+			usleep(500);
+			
+		
+		if((pid = fork()) == 0) {
+			char *args[] = {"./child", "-aF", "/", 0};
+			char *env[] = { 0 };
+			execve("./child", args, env);
+			perror("execve");
+			exit(1);
+		} else {
+			pids[ind] = pid;
+			printf ("Parent reads <%s>\n", shm) ;
+		}
+	}	
+		
+		while(wait(NULL) > 0)
+			;
 
-	if((pid = fork()) == 0) {
-		char *args[] = {"./child", "-aF", "/", 0};
-		char *env[] = { 0 };
-		execve("./child", args, env);
-		perror("execve");
-		exit(1);
-	} else {
-		childpid = pid;
-		shmid = shmget(2009, SHMSIZE, 0666 | IPC_CREAT);
-		shm = shmat(shmid, 0, 0);
-		wait(NULL);
-		printf ("Parent reads <%s>\n", shm) ;
-		shmdt(shm);
-		shmctl(shmid, IPC_RMID, NULL);
-	}
+	shmdt(shm);
+	shmctl(shmid, IPC_RMID, NULL);
 	
 	return 0;
 }

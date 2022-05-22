@@ -38,7 +38,6 @@ int main (int argc, char *argv[]) {
 	
 	strcat(s, "\n");  /* Append newline */
 	printf ("Child wrote <%s> \n", shm);
-	sleep(500);
 	shmdt(shm);
 	return 0;
 }		
