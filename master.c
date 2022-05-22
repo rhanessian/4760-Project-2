@@ -1,20 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/shm.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/wait.h>  
-#include <unistd.h>    
-#include <string.h> 
-#include <signal.h>
-#define SHMSIZE 27
-#define MAXPIDS 20
+#include "structure.h"
 
 pid_t pids[MAXPIDS];
 
 int shmid;
-char *shm;
+struct shrd_mem *shm;
 
 void sighandler(int signum) {
 	printf("Caught signal %d, coming out...\n", signum);
@@ -50,6 +39,8 @@ int main (int argc, char *argv[]) {
 	signal(SIGCHLD, handle_child);
 	signal(SIGALRM, sighandler);
 	
+	remove("cstest");
+	
 	int c, n;
 	
 	int ss = 100;
@@ -76,7 +67,7 @@ int main (int argc, char *argv[]) {
 	
 	printf("ss = %d, n = %d\n", ss, n);
 	key_t key_glock = ftok("master.c", 420);
-	shmid = shmget(key_glock, SHMSIZE, 0666 | IPC_CREAT);
+	shmid = shmget(key_glock, sizeof(struct shrd_mem), 0666 | IPC_CREAT);
 	shm = shmat(shmid, 0, 0);
 	
 	pid_t pid;
@@ -88,14 +79,15 @@ int main (int argc, char *argv[]) {
 			
 		
 		if((pid = fork()) == 0) {
-			char *args[] = {"./child", "-aF", "/", 0};
+			char string_num[8];
+			snprintf(string_num, sizeof(string_num), "%d", ind);
+			char *args[] = {"./child", string_num, 0};
 			char *env[] = { 0 };
 			execve("./child", args, env);
 			perror("execve");
 			exit(1);
 		} else {
 			pids[ind] = pid;
-			printf ("Parent reads <%s>\n", shm) ;
 		}
 	}	
 		
