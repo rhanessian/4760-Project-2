@@ -48,6 +48,8 @@ int find_space(void) {
 int main (int argc, char *argv[]) {
 	signal(SIGINT, sighandler);
 	signal(SIGCHLD, handle_child);
+	signal(SIGALRM, sighandler);
+	
 	int c, n;
 	
 	int ss = 100;
@@ -70,8 +72,11 @@ int main (int argc, char *argv[]) {
 		n = atoi(argv[optind]);	
 	}
 	
+	alarm(ss);
+	
 	printf("ss = %d, n = %d\n", ss, n);
-	shmid = shmget(2009, SHMSIZE, 0666 | IPC_CREAT);
+	key_t key_glock = ftok("master.c", 420);
+	shmid = shmget(key_glock, SHMSIZE, 0666 | IPC_CREAT);
 	shm = shmat(shmid, 0, 0);
 	
 	pid_t pid;
