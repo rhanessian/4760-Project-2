@@ -40,6 +40,11 @@ int main (int argc, char *argv[]) {
 	signal(SIGALRM, sighandler);
 	
 	remove("cstest");
+	for (int i = 0; i < MAXPIDS; i++){
+		char filename[32];
+		snprintf(filename, sizeof(filename), "logfile.%d", i);
+		remove(filename);
+	}
 	
 	int c, n;
 	
@@ -59,10 +64,14 @@ int main (int argc, char *argv[]) {
 	
 	if (argc <= optind) {
 		printf("Need argument n\n");
+		return(-1);
 	} else {
 		n = atoi(argv[optind]);	
 	}
-	
+	if (n > 20){
+		fprintf(stderr, "Warning: n cannot be greater than 20.\n");
+		n = 20;
+	}
 	alarm(ss);
 	
 	printf("ss = %d, n = %d\n", ss, n);

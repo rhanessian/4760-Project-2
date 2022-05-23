@@ -1,11 +1,12 @@
 CC = gcc
 
-TARGET = simplechain
+all: master child
 
-all: $(TARGET)
+master: master.c
+	gcc -o master master.c
 
-$(TARGET): $(TARGET).c
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c
+child: child.c
+	gcc -o child child.c
 
 clean:
-	$(RM) $(TARGET)
+	$(RM) child master

@@ -28,6 +28,20 @@ void enter_cs(int num){
 	}
 }
 
+void log_event(int num, const char* message) {
+	char filename[32];
+	snprintf(filename, sizeof(filename), "logfile.%d", num);
+	FILE* f = fopen(filename, "a");
+	time_t timer;
+    struct tm* tm_info;
+	timer = time(NULL);
+    tm_info = localtime(&timer);
+    char buffer[26];
+    strftime(buffer, sizeof(buffer), "%H:%M:%S", tm_info);
+    fprintf(f, "%s: %s\n", buffer, message);
+    fclose(f);
+}
+
 int main (int argc, char *argv[]) {
 	signal(SIGINT, sighandler);
 	
@@ -48,8 +62,10 @@ int main (int argc, char *argv[]) {
     
 	printf("%ld\n", (long)getpid());
 	
-	for(int i = 0; i < 1; i++) {
+	for(int i = 0; i < 3; i++) {
+		log_event(num, "Entering critical section...");
 		enter_cs(num);
+		log_event(num, "Entered critical section.");
 		sleep(1 + rand()%5);
 		timer = time(NULL);
     	tm_info = localtime(&timer);
@@ -58,6 +74,7 @@ int main (int argc, char *argv[]) {
 		fprintf(f, "%s Queue %d File modified by process number %d\n", buffer, num, (int)getpid());
 		fclose(f);
 		sleep(1 + rand()%5);
+		log_event(num, "Exiting critical section...");
 		shm->numbers[num] = 0;
 	}
 	
