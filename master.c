@@ -98,7 +98,7 @@ int main (int argc, char *argv[]) {
 	for (int i = 0; i < n; i++) {
 		int ind;
 		while ((ind = find_space()) < 0)
-			usleep(500);
+			;
 			
 		
 		if((pid = fork()) == 0) {
