@@ -10,6 +10,7 @@
 #include <signal.h>
 #include <time.h>
 #include <stdbool.h>
+#include <getopt.h>
 #include "structure.h"
 
 pid_t pids[MAXPIDS];
